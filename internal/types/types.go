@@ -36,16 +36,33 @@ type Location struct {
 	Name string  `json:"name,omitempty"`
 }
 
-type TravelRequest struct {
-	CurrentLocation         Location `json:"current_location"`
-	DestinationDistrictName string   `json:"destination_district_name"`
-	TravelDate              string   `json:"travel_date"` // Format: YYYY-MM-DD
+type TopDestinationsResponse struct {
+	GeneratedAt  string            `json:"generated_at"`
+	Description  string            `json:"description"`
+	Destinations []DistrictWeather `json:"destinations"`
 }
 
 type LocationWeather struct {
 	Name    string  `json:"name"`
 	Temp2PM float64 `json:"temp_2pm_celsius"`
 	PM25    float64 `json:"pm25"`
+}
+
+type TravelRequest struct {
+	CurrentLocation         Location `json:"current_location"`
+	DestinationDistrictName string   `json:"destination_district_name"`
+	TravelDate              string   `json:"travel_date"` // Format: YYYY-MM-DD
+}
+
+// TravelRequestBody is the request body for travel recommendation
+type TravelRequestBody struct {
+	CurrentLocation struct {
+		Lat  float64 `json:"lat"`
+		Long float64 `json:"long"`
+		Name string  `json:"name,omitempty"`
+	} `json:"current_location"`
+	DestinationDistrictName string `json:"destination_district_name"`
+	TravelDate              string `json:"travel_date"`
 }
 
 // TravelRecommendation is the API response

@@ -13,6 +13,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/shuv1824/recommender/internal/handlers"
+	"github.com/shuv1824/recommender/internal/services/travel"
 	"github.com/shuv1824/recommender/internal/services/weather"
 	"github.com/shuv1824/recommender/internal/utils/geodata"
 )
@@ -29,7 +30,8 @@ func Run() error {
 	slog.Info("Loaded districts", "count", len(districts))
 
 	weatherService := weather.NewCachedWeatherService(districts, 5*time.Minute)
-	weatherHandler := handlers.NewWeatherHandler(weatherService)
+	travelService := travel.NewTravelService(districts)
+	recommendationHandler := handlers.NewRecommendationHandler(weatherService, travelService)
 
 	// Warm cache on startup (fetch data before serving requests)
 	slog.Info("Warming weather cache...")
@@ -54,7 +56,8 @@ func Run() error {
 	api := r.PathPrefix("/api/v1").Subrouter()
 
 	// Weather/Destination routes
-	api.HandleFunc("/destinations/top", weatherHandler.GetTopDestinations).Methods(http.MethodGet)
+	api.HandleFunc("/destinations/top", recommendationHandler.GetTopDestinations).Methods(http.MethodGet)
+	api.HandleFunc("/travel/recommendation", recommendationHandler.GetRecommendation).Methods(http.MethodPost)
 
 	slog.Info("starting backend server")
 
