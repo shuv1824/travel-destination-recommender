@@ -46,9 +46,9 @@ func (s *TravelService) GetRecommendation(ctx context.Context, req types.TravelR
 
 	// Check if date is within forecast range (next 15 days)
 	now := time.Now().Truncate(24 * time.Hour)
-	maxDate := now.AddDate(0, 0, 15)
+	maxDate := now.AddDate(0, 0, 7)
 	if travelDate.Before(now) || travelDate.After(maxDate) {
-		return nil, fmt.Errorf("travel date must be within the next 15 days")
+		return nil, fmt.Errorf("travel date must be within the next 7 days")
 	}
 
 	// Get destination district
@@ -111,7 +111,7 @@ func (s *TravelService) GetRecommendation(ctx context.Context, req types.TravelR
 		recommended = "Recommended"
 	}
 
-	reason := "Reason" // TODO: generateReason
+	reason := s.generateReason(isCooler, isCleaner, tempDiff, pm25Diff, destination.Name)
 
 	return &types.TravelRecommendation{
 		Recommendation:     recommended,
@@ -247,4 +247,57 @@ func (s *TravelService) fetchPM25(ctx context.Context, lat, long float64, date s
 	}
 
 	return 0, fmt.Errorf("no 2PM PM2.5 data found")
+}
+
+// generateReason creates a human-readable recommendation reason
+func (s *TravelService) generateReason(isCooler, isCleaner bool, tempDiff, pm25Diff float64, destName string) string {
+	absTempDiff := math.Abs(tempDiff)
+	absPM25Diff := math.Abs(pm25Diff)
+
+	// Classify temperature difference
+	var tempDesc string
+	if absTempDiff < 1 {
+		tempDesc = "about the same temperature"
+	} else if absTempDiff < 3 {
+		if isCooler {
+			tempDesc = fmt.Sprintf("%.1f°C cooler", absTempDiff)
+		} else {
+			tempDesc = fmt.Sprintf("%.1f°C hotter", absTempDiff)
+		}
+	} else {
+		if isCooler {
+			tempDesc = fmt.Sprintf("significantly cooler (%.1f°C less)", absTempDiff)
+		} else {
+			tempDesc = fmt.Sprintf("significantly hotter (%.1f°C more)", absTempDiff)
+		}
+	}
+
+	// Classify air quality difference
+	var aqDesc string
+	if absPM25Diff < 5 {
+		aqDesc = "similar air quality"
+	} else if absPM25Diff < 15 {
+		if isCleaner {
+			aqDesc = "better air quality"
+		} else {
+			aqDesc = "worse air quality"
+		}
+	} else {
+		if isCleaner {
+			aqDesc = "significantly better air quality"
+		} else {
+			aqDesc = "significantly worse air quality"
+		}
+	}
+
+	// Generate final recommendation message
+	if isCooler && isCleaner {
+		return fmt.Sprintf("%s is %s and has %s. Enjoy your trip! 🌴", destName, tempDesc, aqDesc)
+	} else if isCooler && !isCleaner {
+		return fmt.Sprintf("%s is %s but has %s. Consider wearing a mask if you decide to travel.", destName, tempDesc, aqDesc)
+	} else if !isCooler && isCleaner {
+		return fmt.Sprintf("%s is %s but has %s. Pack light clothes if you go!", destName, tempDesc, aqDesc)
+	} else {
+		return fmt.Sprintf("%s is %s and has %s. It's better to stay where you are or choose another destination.", destName, tempDesc, aqDesc)
+	}
 }

@@ -50,7 +50,7 @@ type LocationWeather struct {
 
 type TravelRequest struct {
 	CurrentLocation         Location `json:"current_location"`
-	DestinationDistrictName string   `json:"destination_district_name"`
+	DestinationDistrictName string   `json:"destination_district"`
 	TravelDate              string   `json:"travel_date"` // Format: YYYY-MM-DD
 }
 
@@ -61,7 +61,7 @@ type TravelRequestBody struct {
 		Long float64 `json:"long"`
 		Name string  `json:"name,omitempty"`
 	} `json:"current_location"`
-	DestinationDistrictName string `json:"destination_district_name"`
+	DestinationDistrictName string `json:"destination_district"`
 	TravelDate              string `json:"travel_date"`
 }
 

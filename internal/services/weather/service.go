@@ -47,7 +47,7 @@ func (s *WeatherService) GetTopCoolestAndCleanest(ctx context.Context) ([]types.
 	var wg sync.WaitGroup
 
 	// Use a semaphore to limit concurrent requests (avoid rate limiting)
-	semaphore := make(chan struct{}, 8) // Max 8 concurrent requests
+	semaphore := make(chan struct{}, 5) // Max 5 concurrent requests
 
 	for _, district := range s.districts {
 		wg.Add(1)
