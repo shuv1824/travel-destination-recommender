@@ -31,15 +31,12 @@ func Run() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	temp, err := weatherService.FetchTemperature(ctx, districts[0].Lat, districts[0].Long)
+	res, err := weatherService.GetTopCoolestAndCleanest(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to fetch temperature: %w", err)
+		return fmt.Errorf("failed to get top districts: %w", err)
 	}
-	airQuality, err := weatherService.FetchAirQuality(ctx, districts[0].Lat, districts[0].Long)
-	if err != nil {
-		return fmt.Errorf("failed to fetch air quality: %w", err)
-	}
-	slog.Info("Fetched weather data", "temp", temp, "air_quality", airQuality)
+
+	slog.Info("Fetched weather data", "top", res)
 
 	slog.Info("starting backend server")
 
