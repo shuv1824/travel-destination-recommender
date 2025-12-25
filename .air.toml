@@ -4,7 +4,7 @@ tmp_dir = "tmp"
 [build]
   args_bin = []
   bin = "./tmp/main"
-  cmd = "go build -o ./tmp/main ."
+  cmd = "go build -buildvcs=false -o ./tmp/main ."
   delay = 1000
   exclude_dir = ["assets", "tmp", "vendor", "testdata"]
   exclude_file = []
@@ -18,10 +18,6 @@ tmp_dir = "tmp"
   log = "build-errors.log"
   send_interrupt = false
   stop_on_error = true
-
-  # required on windows, fsnotify is not reliable on windows
-  poll = true
-  poll_interval = 500
 
 [color]
   app = ""

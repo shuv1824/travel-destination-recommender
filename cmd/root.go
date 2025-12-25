@@ -10,11 +10,20 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/shuv1824/recommender/internal/utils/geodata"
 )
 
 func Run() error {
 	logger := setupLogger()
 	slog.SetDefault(logger)
+
+	if err := geodata.Load("data/districts.json"); err != nil {
+		return fmt.Errorf("failed to load geodata: %w", err)
+	}
+
+	districts := geodata.Districts()
+	slog.Info("Loaded districts", "count", len(districts))
 
 	slog.Info("starting backend server")
 
