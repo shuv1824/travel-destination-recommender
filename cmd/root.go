@@ -28,8 +28,21 @@ func Run() error {
 	districts := geodata.Districts()
 	slog.Info("Loaded districts", "count", len(districts))
 
-	weatherService := weather.NewWeatherService(districts)
+	weatherService := weather.NewCachedWeatherService(districts, 5*time.Minute)
 	weatherHandler := handlers.NewWeatherHandler(weatherService)
+
+	// Warm cache on startup (fetch data before serving requests)
+	slog.Info("Warming weather cache...")
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	if err := weatherService.WarmCache(ctx); err != nil {
+		slog.Error("Warning: failed to warm cache: ", "error", err)
+	} else {
+		slog.Info("Cache warmed successfully")
+	}
+	cancel()
+
+	// Start background cache refresh
+	weatherService.StartBackgroundRefresh(context.Background())
 
 	// Initialize router
 	r := mux.NewRouter()
@@ -49,6 +62,7 @@ func Run() error {
 		Addr:    ":8080",
 		Handler: r,
 	}
+
 	return startServer(server)
 }
 

@@ -11,10 +11,10 @@ import (
 )
 
 type WeatherHandler struct {
-	service *weather.WeatherService
+	service *weather.CachedWeatherService
 }
 
-func NewWeatherHandler(service *weather.WeatherService) *WeatherHandler {
+func NewWeatherHandler(service *weather.CachedWeatherService) *WeatherHandler {
 	return &WeatherHandler{service: service}
 }
 
@@ -33,7 +33,7 @@ func Health(w http.ResponseWriter, r *http.Request) {
 
 // GetTopDestinations returns top 10 coolest and cleanest districts
 func (h *WeatherHandler) GetTopDestinations(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(r.Context(), 9000*time.Millisecond)
+	ctx, cancel := context.WithTimeout(r.Context(), 490*time.Millisecond)
 	defer cancel()
 
 	start := time.Now()
