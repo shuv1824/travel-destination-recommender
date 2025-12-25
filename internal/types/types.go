@@ -50,7 +50,7 @@ type LocationWeather struct {
 
 // TravelRecommendation is the API response
 type TravelRecommendation struct {
-	Recommended        bool            `json:"recommended"`
+	Recommendation     string          `json:"recommendation"`
 	Reason             string          `json:"reason"`
 	TravelDate         string          `json:"travel_date"`
 	CurrentWeather     LocationWeather `json:"current_location"`
