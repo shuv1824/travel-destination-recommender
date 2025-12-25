@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"net/http"
+	"sort"
 	"sync"
 	"time"
 
@@ -83,19 +85,12 @@ func (s *WeatherService) GetTopCoolestAndCleanest(ctx context.Context) ([]types.
 		districtWeathers = append(districtWeathers, types.DistrictWeather{
 			ID:         result.District.ID,
 			Name:       result.District.Name,
-			BnName:     result.District.BnName,
 			AvgTemp2PM: result.AvgTemp2PM,
 			AvgPM25:    result.AvgPM25,
 		})
 	}
 
-	//TODO: Calculate combined score and rank
-	ranked := districtWeathers
-
-	// Return top 10
-	if len(ranked) > 10 {
-		ranked = ranked[:10]
-	}
+	ranked := s.rankDistricts(districtWeathers)
 
 	return ranked, nil
 }
@@ -181,7 +176,9 @@ func (s *WeatherService) fetchTemperature(ctx context.Context, lat, long float64
 	for _, t := range temps {
 		sum += t
 	}
-	return sum / float64(len(temps)), nil
+	avg := sum / float64(len(temps))
+
+	return math.Round(avg*100) / 100, nil
 }
 
 // fetchAirQuality fetches air quality data and calculates avg PM2.5
@@ -229,5 +226,32 @@ func (s *WeatherService) fetchAirQuality(ctx context.Context, lat, long float64)
 	for _, v := range pm25Values {
 		sum += v
 	}
-	return sum / float64(len(pm25Values)), nil
+	avg := sum / float64(len(pm25Values))
+
+	return math.Round(avg*100) / 100, nil
+}
+
+// rankDistricts ranks districts by coolest temperature first,
+// breaking ties by better air quality (lower PM2.5)
+// returns top 10 coolest and cleanest districts
+func (s *WeatherService) rankDistricts(districts []types.DistrictWeather) []types.DistrictWeather {
+	if len(districts) == 0 {
+		return districts
+	}
+
+	// Sort by temperature (ascending), then by PM2.5 (ascending) for ties
+	sort.Slice(districts, func(i, j int) bool {
+		if districts[i].AvgTemp2PM != districts[j].AvgTemp2PM {
+			return districts[i].AvgTemp2PM < districts[j].AvgTemp2PM
+		}
+		return districts[i].AvgPM25 < districts[j].AvgPM25
+	})
+
+	topTenDistricts := districts[:10]
+
+	for i := range topTenDistricts {
+		topTenDistricts[i].Rank = i + 1
+	}
+
+	return topTenDistricts
 }

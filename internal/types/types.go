@@ -23,14 +23,11 @@ type GeoData struct {
 }
 
 type DistrictWeather struct {
-	ID             string  `json:"id"`
-	Name           string  `json:"name"`
-	BnName         string  `json:"bn_name"`
-	AvgTemp2PM     float64 `json:"avg_temp_2pm_celsius"`
-	AvgPM25        float64 `json:"avg_pm25"`
-	CoolnessRank   int     `json:"coolness_rank,omitempty"`
-	AirQualityRank int     `json:"air_quality_rank,omitempty"`
-	CombinedScore  float64 `json:"combined_score"` // Lower is better
+	ID         string  `json:"id"`
+	Name       string  `json:"name"`
+	AvgTemp2PM float64 `json:"avg_temp_2pm_celsius"`
+	AvgPM25    float64 `json:"avg_pm25"`
+	Rank       int     `json:"rank"`
 }
 
 // OpenMeteoForecastResponse represents the weather API response
