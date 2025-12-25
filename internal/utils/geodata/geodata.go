@@ -3,24 +3,14 @@ package geodata
 import (
 	"encoding/json"
 	"os"
+	"strconv"
 	"sync"
+
+	"github.com/shuv1824/recommender/internal/types"
 )
 
-type District struct {
-	ID         string `json:"id"`
-	DivisionID string `json:"division_id"`
-	Name       string `json:"name"`
-	BnName     string `json:"bn_name"`
-	Lat        string `json:"lat"`
-	Long       string `json:"long"`
-}
-
-type GeoData struct {
-	Districts []District `json:"districts"`
-}
-
 var (
-	data     GeoData
+	data     []types.District
 	loadOnce sync.Once
 	loadErr  error
 )
@@ -35,20 +25,38 @@ func Load(filepath string) error {
 		}
 		defer file.Close()
 
-		loadErr = json.NewDecoder(file).Decode(&data)
+		var raw types.GeoData
+		if err := json.NewDecoder(file).Decode(&raw); err != nil {
+			loadErr = err
+			return
+		}
+
+		// Convert to weather.District with parsed coordinates
+		data = make([]types.District, 0, len(raw.Districts))
+		for _, d := range raw.Districts {
+			lat, err := strconv.ParseFloat(d.Lat, 64)
+			if err != nil {
+				continue
+			}
+			long, err := strconv.ParseFloat(d.Long, 64)
+			if err != nil {
+				continue
+			}
+
+			data = append(data, types.District{
+				ID:         d.ID,
+				DivisionID: d.DivisionID,
+				Name:       d.Name,
+				BnName:     d.BnName,
+				Lat:        lat,
+				Long:       long,
+			})
+		}
 	})
+
 	return loadErr
 }
 
-func Districts() []District {
-	return data.Districts
-}
-
-func FindDistrict(id string) *District {
-	for i := range data.Districts {
-		if data.Districts[i].ID == id {
-			return &data.Districts[i]
-		}
-	}
-	return nil
+func Districts() []types.District {
+	return data
 }
