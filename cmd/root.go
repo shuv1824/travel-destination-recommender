@@ -11,6 +11,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gorilla/mux"
+	"github.com/shuv1824/recommender/internal/handlers"
 	"github.com/shuv1824/recommender/internal/services/weather"
 	"github.com/shuv1824/recommender/internal/utils/geodata"
 )
@@ -27,21 +29,25 @@ func Run() error {
 	slog.Info("Loaded districts", "count", len(districts))
 
 	weatherService := weather.NewWeatherService(districts)
+	weatherHandler := handlers.NewWeatherHandler(weatherService)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	// Initialize router
+	r := mux.NewRouter()
 
-	res, err := weatherService.GetTopCoolestAndCleanest(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to get top districts: %w", err)
-	}
+	// Health check
+	r.HandleFunc("/health", handlers.Health).Methods(http.MethodGet)
 
-	slog.Info("Fetched weather data", "top", res)
+	// API v1 subrouter
+	api := r.PathPrefix("/api/v1").Subrouter()
+
+	// Weather/Destination routes
+	api.HandleFunc("/destinations/top", weatherHandler.GetTopDestinations).Methods(http.MethodGet)
 
 	slog.Info("starting backend server")
 
 	server := &http.Server{
-		Addr: ":8080",
+		Addr:    ":8080",
+		Handler: r,
 	}
 	return startServer(server)
 }
