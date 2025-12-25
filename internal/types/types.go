@@ -30,6 +30,35 @@ type DistrictWeather struct {
 	Rank       int     `json:"rank"`
 }
 
+type Location struct {
+	Lat  float64 `json:"lat"`
+	Long float64 `json:"long"`
+	Name string  `json:"name,omitempty"`
+}
+
+type TravelRequest struct {
+	CurrentLocation         Location `json:"current_location"`
+	DestinationDistrictName string   `json:"destination_district_name"`
+	TravelDate              string   `json:"travel_date"` // Format: YYYY-MM-DD
+}
+
+type LocationWeather struct {
+	Name    string  `json:"name"`
+	Temp2PM float64 `json:"temp_2pm_celsius"`
+	PM25    float64 `json:"pm25"`
+}
+
+// TravelRecommendation is the API response
+type TravelRecommendation struct {
+	Recommended        bool            `json:"recommended"`
+	Reason             string          `json:"reason"`
+	TravelDate         string          `json:"travel_date"`
+	CurrentWeather     LocationWeather `json:"current_location"`
+	DestinationWeather LocationWeather `json:"destination"`
+	TempDifference     float64         `json:"temp_difference_celsius"`
+	PM25Difference     float64         `json:"pm25_difference"`
+}
+
 // OpenMeteoForecastResponse represents the weather API response
 type OpenMeteoForecastResponse struct {
 	Hourly struct {
