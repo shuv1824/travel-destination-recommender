@@ -11,8 +11,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-	"github.com/shuv1824/recommender/internal/handlers"
+	"github.com/shuv1824/recommender/internal/handler"
 	"github.com/shuv1824/recommender/internal/services/travel"
 	"github.com/shuv1824/recommender/internal/services/weather"
 	"github.com/shuv1824/recommender/internal/utils/geodata"
@@ -31,7 +32,7 @@ func Run() error {
 
 	weatherService := weather.NewCachedWeatherService(districts, 5*time.Minute)
 	travelService := travel.NewTravelService(districts)
-	recommendationHandler := handlers.NewRecommendationHandler(weatherService, travelService)
+	recommendationHandler := handler.NewRecommendationHandler(weatherService, travelService)
 
 	// Warm cache on startup (fetch data before serving requests)
 	slog.Info("Warming weather cache...")
@@ -50,7 +51,7 @@ func Run() error {
 	r := mux.NewRouter()
 
 	// Health check
-	r.HandleFunc("/health", handlers.Health).Methods(http.MethodGet)
+	r.HandleFunc("/health", handler.Health).Methods(http.MethodGet)
 
 	// API v1 subrouter
 	api := r.PathPrefix("/api/v1").Subrouter()
@@ -59,11 +60,25 @@ func Run() error {
 	api.HandleFunc("/destinations/top", recommendationHandler.GetTopDestinations).Methods(http.MethodGet)
 	api.HandleFunc("/travel/recommendation", recommendationHandler.GetRecommendation).Methods(http.MethodPost)
 
-	slog.Info("starting backend server")
+	var h http.Handler = r
+
+	// Recovery (catches panics)
+	h = handlers.RecoveryHandler()(h)
+
+	// CORS
+	h = handlers.CORS(
+		handlers.AllowedOrigins([]string{"*"}),
+		handlers.AllowedMethods([]string{"GET", "POST"}),
+	)(h)
+
+	// Logging
+	h = handlers.LoggingHandler(os.Stdout, h)
+
+	slog.Info("starting api server")
 
 	server := &http.Server{
 		Addr:    ":8080",
-		Handler: r,
+		Handler: h,
 	}
 
 	return startServer(server)
