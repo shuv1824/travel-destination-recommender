@@ -32,6 +32,9 @@ RUN addgroup -g 1001 -S appgroup && \
 # Copy binary from builder
 COPY --from=builder /api .
 
+# Copy data files
+COPY --from=builder /app/data ./data
+
 # Set ownership
 RUN chown -R appuser:appgroup /app
 
